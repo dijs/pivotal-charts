@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8">
+    <title>TCS Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="//favicon.ico" type="image/x-icon" sizes="16x16">
+    <!--[if lt IE 9]>
+            <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.2/html5shiv.js"></script>
+        <![endif]-->
+    
+    <link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/chartist/0.4.1/chartist.min.css">
+    <link rel="stylesheet" type="text/css" href="index.css">
+
+</head>
+
+<body>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/chartist/0.4.1/chartist.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+
+    <select id="projects"></select>
+    <button id="load">Load</button>
+
+    <h1>Sprints</h1>
+    <div class="story-sprint ct-chart"></div>
+
+    <select id="iterations"></select>
+    <button id="loadBurndown">Load</button>
+
+    <h1>Burndown</h1>
+    <div class="burndown ct-chart"></div>
+
+    <h1>Cumulative Flow</h1>
+    <div class="flow ct-chart"></div>
+
+</body>
+
+</html>
