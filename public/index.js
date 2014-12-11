@@ -1,34 +1,27 @@
 'use strict';
 
-/* global $, console, _, Chartist, moment */
+/* global $, console, _, moment, nv, d3 */
 
 String.prototype.capitalize = function() {
 	return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
-var releaseLabelFormat = /\d+\.\d+\.\d+/;
-
-var responsiveOptions = [
-	['screen and (max-width: 640px)', {
-		seriesBarDistance: 5,
-		axisX: {
-			labelInterpolationFnc: function(value) {
-				return value[0];
-			}
-		}
-	}]
-];
+var releaseLabelFormat = /(\d+)\.(\d+)\.(\d+)/;
 
 // TODO: Make releases it a diamond label
 
 function getReleaseLabelFromIteration(iteration) {
-	var releaseStory = _.find(iteration.stories, function(story) {
-		return story.type === 'release';
-	});
-	var label = releaseStory ? _.find(releaseStory.labels, function(label) {
+	var releaseLabels = _.chain(iteration.stories).pluck('labels').flatten().filter(function(label) {
 		return label.match(releaseLabelFormat);
-	}) : null;
-	return label ? label.match(releaseLabelFormat)[0] : moment(iteration.finish).format('MMM DD');
+	}).value();
+	if (releaseLabels.length) {
+		var mostCommonLabel = _.chain(releaseLabels).countBy().invert().max(function(label, count) {
+			return count;
+		}).value();
+		return mostCommonLabel.match(releaseLabelFormat)[0];
+	} else {
+		return moment(iteration.finish).format('MMM DD');
+	}
 }
 
 function loadIterations(iterations) {
@@ -42,57 +35,69 @@ function loadIterations(iterations) {
 		return _.pluck(iteration.stories, 'type');
 	}))).filter(function(type) {
 		return type !== 'release';
-	});
-
-	var data = {
-		labels: [],
-		series: []
-	};
+	}).sort();
 
 	// Initialize Data
-	types.forEach(function(type) {
-		data.series.push({
-			name: 'Number of ' + type.capitalize() + ' Stories',
-			data: iterations.map(function() {
-				return 0;
+	var data = types.map(function(type) {
+		return {
+			key: type.capitalize() + ' Stories',
+			values: iterations.map(function(iteration) {
+				return {
+					x: getReleaseLabelFromIteration(iteration),
+					y: 0
+				};
 			})
-		});
+		};
 	});
 
-	// TODO: Make release label function 
-
+	// Fill Data
 	iterations.forEach(function(iteration, iterationIndex) {
-		data.labels.push(getReleaseLabelFromIteration(iteration));
 		iteration.stories.filter(function(story) {
 			return story.type !== 'release';
 		}).forEach(function(story) {
-			data.series[types.indexOf(story.type)].data[iterationIndex] += 1;
+			data[types.indexOf(story.type)].values[iterationIndex].y += 1;
 		});
 	});
 
-	new Chartist.Bar('.story-sprint', data, {
-		seriesBarDistance: 10,
-		axisY: {
-			offset: 80,
-			labelInterpolationFnc: function(value) {
-				return (value | 0) + ' Points';
-			},
-			scaleMinSpace: 15
-		}
-	}, responsiveOptions);
+	// Create Chart
+	nv.addGraph(function() {
+		var chart = nv.models.multiBarChart()
+			.transitionDuration(350)
+			.reduceXTicks(false)
+			.rotateLabels(0)
+			.showControls(true)
+			.groupSpacing(0.1);
+		chart.yAxis.tickFormat(d3.format(',f'));
+		d3.select('.story-sprint svg')
+			.datum(data)
+			.call(chart);
+		nv.utils.windowResize(chart.update);
+		return chart;
+	});
 
 }
 
-function wasDoneOn(story, day) {
+function wasStateBefore(story, state, day) {
 	return _.any(story.activity, function(e) {
-		return e.highlight === 'delivered' && moment(e.at).isBefore(day);
+		return e.highlight === state && moment(e.at).isBefore(day);
 	});
 }
 
 function deliveredDoneness(story, day) {
-	return wasDoneOn(story, day) ? 0 : story.estimation || 0;
-	// last state for the given day
-	// if story has ever been done ~ 50%
+	var est = story.estimation || 0;
+	if (wasStateBefore(story, 'accepted', day)) {
+		return 0;
+	} else {
+		if (wasStateBefore(story, 'delivered', day)) {
+			return est * 0.1;
+		} else {
+			if (wasStateBefore(story, 'finished', day)) {
+				return est * 0.5;
+			} else {
+				return est;
+			}
+		}
+	}
 }
 
 function doneness(stories, day) {
@@ -101,7 +106,7 @@ function doneness(stories, day) {
 	}, 0);
 }
 
-var allowedStates = ['accepted', 'delivered', 'finished', 'started', 'rejected', 'unstarted'];
+var allowedStates = ['unstarted', 'started', 'finished', 'rejected', 'delivered', 'accepted'].reverse();
 
 function isAllowedEventState(e) {
 	return _.contains(allowedStates, e.highlight);
@@ -110,7 +115,7 @@ function isAllowedEventState(e) {
 function getLastStoryEventForDay(story, day) {
 	var lastEvent = _.chain(story.activity).filter(isAllowedEventState).filter(function(e) {
 		return moment(e.at).isBefore(day);
-	}).sortBy(function(e){
+	}).sortBy(function(e) {
 		return e.at;
 	}).last().value();
 
@@ -122,33 +127,32 @@ function getLastStoryEventForDay(story, day) {
 // TODO: Open Doneness function
 
 function loadBurndownChart(iteration) {
-	var data = {
-		labels: [],
-		series: [{
-			name: 'Points',
-			data: []
-		}]
-	};
+	var data = [{
+		key: 'Points',
+		values: []
+	}];
 
 	var lastDay = moment(iteration.finish);
 	var day = moment(iteration.start);
 
 	while (day.isBefore(lastDay)) {
-		data.labels.push(day.format('MMM DD'));
-		data.series[0].data.push(doneness(iteration.stories, day));
+		data[0].values.push({
+			x: +day,
+			y: doneness(iteration.stories, day)
+		});
 		day.add(1, 'days');
 	}
 
 	// Ideal Line
 	if (false) {
-		data.series.push({
+		/*data.series.push({
 			name: 'Goal',
 			data: []
 		});
 		var total = 0;
 		iteration.stories.forEach(function(story) {
 			total += story.estimation || 0;
-		});
+		});*/
 		//var goalDelta = total / (lastDay.diff(day, 'days') + 1);
 		//var goalCurrent = total;
 		//data.series[1].data.push(goalCurrent);
@@ -156,68 +160,98 @@ function loadBurndownChart(iteration) {
 
 	}
 
-	new Chartist.Line('.burndown', data, {
-		seriesBarDistance: 10,
-		axisY: {
-			offset: 80,
-			labelInterpolationFnc: function(value) {
-				return (value | 0) + ' Points';
-			},
-			scaleMinSpace: 15
-		}
-	}, responsiveOptions);
+	nv.addGraph(function() {
+		var chart = nv.models.lineChart()
+			.useInteractiveGuideline(true)
+			.transitionDuration(350)
+			.showLegend(true)
+			.showYAxis(true)
+			.showXAxis(true);
+
+		chart.xAxis.axisLabel('Day').tickFormat(function(d) {
+			return d3.time.format('%b %d')(new Date(d));
+		});
+
+		d3.select('.burndown svg')
+			.datum(data)
+			.call(chart);
+
+		//Update the chart when window resizes.
+		nv.utils.windowResize(function() {
+			chart.update();
+		});
+
+		return chart;
+	});
+
+}
+
+function dateRangeIteration(start, end, callback) {
+	var day = moment(start);
+	var dayIndex = 0;
+	while (day.isBefore(end)) {
+		callback(day, dayIndex);
+		dayIndex++;
+		day.add(1, 'days');
+	}
 }
 
 function loadFlowChart(iteration) {
 
-	var data = {
-		labels: [],
-		series: []
-	};
+	var data = [];
 
 	var stories = iteration.stories.filter(function(story) {
 		return story.type !== 'release';
 	});
-
-	var data = {
-		labels: [],
-		series: []
-	};
 
 	var lastDay = moment(iteration.finish);
 	var day = moment(iteration.start);
 
 	// Initialize Data
 	allowedStates.forEach(function(state) {
-		data.series.push({
-			name: 'Number of ' + state.capitalize() + ' Points',
-			data: _(lastDay.diff(day, 'day')).times(function() {
-				return 0;
-			})
+		var d = {
+			key: state.capitalize(),
+			values: []
+		};
+		dateRangeIteration(day, lastDay, function(day) {
+			d.values.push({
+				x: +day,
+				y: 0
+			});
+		});
+		data.push(d);
+	});
+
+	dateRangeIteration(day, lastDay, function(day, index) {
+		stories.forEach(function(story) {
+			var lastStateIndex = allowedStates.indexOf(getLastStoryEventForDay(story, day));
+			data[lastStateIndex].values[index].y += story.estimation;
 		});
 	});
 
-	var dayIndex = 0;
-	while (day.isBefore(lastDay)) {
-		data.labels.push(day.format('MMM DD'));
-		stories.forEach(function(story) {
-			var lastState = getLastStoryEventForDay(story, day);
-			data.series[allowedStates.indexOf(lastState)].data[dayIndex] += story.estimation;
-		});
-		dayIndex++;
-		day.add(1, 'days');
-	}
+	nv.addGraph(function() {
+		var chart = nv.models.stackedAreaChart()
+			.useInteractiveGuideline(true)
+			.rightAlignYAxis(false)
+			.transitionDuration(500)
+			.showControls(true)
+			.clipEdge(true);
 
-	new Chartist.Line('.flow', data, {
-		seriesBarDistance: 10,
-		axisY: {
-			offset: 80,
-			labelInterpolationFnc: function(value) {
-				return (value | 0) + ' Points';
-			},
-			scaleMinSpace: 15
-		}
-	}, responsiveOptions);
+		//Format x-axis labels with custom function.
+		chart.xAxis.tickFormat(function(d) {
+			return d3.time.format('%b %d')(new Date(d));
+		});
+
+		chart.yAxis.tickFormat(d3.format(',f'));
+
+		d3.select('.flow svg')
+			.datum(data)
+			.call(chart);
+
+		nv.utils.windowResize(chart.update);
+
+		return chart;
+	});
 }
 
 var easeOutQuad = function(x, t, b, c, d) {
@@ -242,6 +276,14 @@ $(document).ready(function() {
 				$('#iterations').prepend('<option value="' + iteration.id + '">' + getReleaseLabelFromIteration(iteration) + '</option>');
 			});
 		});
+	});
+
+	$('#resetIterations').click(function() {
+		$.post('/iterations/reset/' + $('#projects').val());
+	});
+
+	$('#resetStories').click(function() {
+		$.post('/iteration/reset/' + $('#projects').val() + '/' + $('#iterations').val());
 	});
 
 	$('#loadBurndown').click(function() {

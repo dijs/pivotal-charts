@@ -9,34 +9,40 @@
     <!--[if lt IE 9]>
             <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.2/html5shiv.js"></script>
         <![endif]-->
-    
-    <link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/chartist/0.4.1/chartist.min.css">
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.min.css">
     <link rel="stylesheet" type="text/css" href="index.css">
-
 </head>
 
 <body>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/chartist/0.4.1/chartist.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/nvd3/1.1.15-beta/nv.d3.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
     <script type="text/javascript" src="index.js"></script>
 
     <select id="projects"></select>
     <button id="load">Load</button>
+    <button id="resetIterations">Clear Data</button>
 
     <h1>Sprints</h1>
-    <div class="story-sprint ct-chart"></div>
+    <div class="story-sprint with-transition">
+        <svg></svg>
+    </div>
 
     <select id="iterations"></select>
     <button id="loadBurndown">Load</button>
+    <button id="resetStories">Clear Data</button>
 
     <h1>Burndown</h1>
-    <div class="burndown ct-chart"></div>
+    <div class="burndown with-transition">
+        <svg></svg>
+    </div>
 
     <h1>Cumulative Flow</h1>
-    <div class="flow ct-chart"></div>
+    <div class="flow with-transition">
+        <svg></svg>
+    </div>
 
 </body>
 

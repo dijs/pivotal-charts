@@ -1,6 +1,6 @@
 'use strict';
 
-/* global require, console, process, __dirname */
+/* global require, console, __dirname */
 
 var express = require('express');
 var path = require('path');
@@ -10,7 +10,7 @@ var fetch = require('./fetch');
 
 var app = express();
 
-app.set('port', process.env.PORT || 8000);
+app.set('port', 30473);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/projects', function(req, res) {
@@ -34,6 +34,24 @@ app.get('/iterations/:project', function(req, res) {
 				});
 			});
 		}
+	});
+});
+
+app.post('/iterations/reset/:project', function(req, res) {
+	var file = path.join(__dirname, 'data', req.params.project, 'iterations.json');
+	fs.unlink(file, function(err) {
+		res.json({
+			error: err
+		});
+	});
+});
+
+app.post('/iteration/reset/:project/:id', function(req, res) {
+	var file = path.join(__dirname, 'data', req.params.project, req.params.id + '.json');
+	fs.unlink(file, function(err) {
+		res.json({
+			error: err
+		});
 	});
 });
 

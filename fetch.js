@@ -44,7 +44,7 @@ function filterEventData(event) {
 	};
 }
 
-module.exports.getIterationData = function (project, callback) {
+module.exports.getIterationData = function(project, callback) {
 	var data = [];
 	// Get Past
 	console.log('Getting past iteration data for project %d', project);
@@ -75,9 +75,9 @@ module.exports.getIterationData = function (project, callback) {
 	});
 };
 
-module.exports.getProjects = function (callback) {
-	pivotal.getProjects(function(err, projects){
-		callback(err, projects.map(function(project){
+module.exports.getProjects = function(callback) {
+	pivotal.getProjects(function(err, projects) {
+		callback(err, projects.map(function(project) {
 			return {
 				id: project.id,
 				name: project.name
@@ -86,14 +86,18 @@ module.exports.getProjects = function (callback) {
 	});
 };
 
-module.exports.getActivity = function (project, iterationId, callback) {
+module.exports.getActivity = function(project, iterationId, callback) {
 	var iterations = require('./data/' + project + '/iterations.json');
 	var iteration = _.findWhere(iterations, {
 		id: iterationId
 	});
 	async.map(iteration.stories, function(story, next) {
 		pivotal.getStoryActivity(project, story.id, function(err, activity) {
-			story.activity = activity.map(filterEventData);
+			try {
+				story.activity = activity.map(filterEventData);
+			} catch (e) {
+				console.log(activity);
+			}
 			next(err, story);
 		});
 	}, function(err, stories) {
@@ -104,20 +108,3 @@ module.exports.getActivity = function (project, iterationId, callback) {
 		});
 	});
 };
-
-/*getCurrentIterationData(29622, function(err, data) {
-	console.log(err);
-	fs.writeFile('./public/data/' + 29622 + '/current.json', JSON.stringify(data, null, '\t'));
-});*/
-/*
-getIterationData(29622, function(err, data) {
-	console.log(err);
-	fs.writeFile('./public/data/' + 29622 + '/iterations.json', JSON.stringify(data, null, '\t'));
-});
-*/
-/*getCurrentIterationStoryActivity(29622, 87, function(err, data) {
-	console.log(err);
-	fs.writeFile('./public/data/' + 29622 + '/87.json', JSON.stringify(data, null, '\t'), function(err) {
-		console.log(err);
-	});
-});*/
