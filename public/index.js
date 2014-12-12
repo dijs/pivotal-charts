@@ -1,6 +1,6 @@
 'use strict';
 
-/* global $, console, _, moment, nv, d3 */
+/* global $, console, _, moment, nv, d3, Spinner */
 
 String.prototype.capitalize = function() {
 	return this.charAt(0).toUpperCase() + this.slice(1);
@@ -254,27 +254,48 @@ function loadFlowChart(iteration) {
 	});
 }
 
-var easeOutQuad = function(x, t, b, c, d) {
-	return -c * (t /= d) * (t - 2) + b;
-};
-
 $(document).ready(function() {
+
+	var opts = {
+		lines: 11, // The number of lines to draw
+		length: 13, // The length of each line
+		width: 10, // The line thickness
+		radius: 44, // The radius of the inner circle
+		corners: 0.6, // Corner roundness (0..1)
+		rotate: 0, // The rotation offset
+		direction: 1, // 1: clockwise, -1: counterclockwise
+		color: '#000', // #rgb or #rrggbb or array of colors
+		speed: 0.8, // Rounds per second
+		trail: 60, // Afterglow percentage
+		shadow: true, // Whether to render a shadow
+		hwaccel: false, // Whether to use hardware acceleration
+		className: 'spinner', // The CSS class to assign to the spinner
+		zIndex: 2e9, // The z-index (defaults to 2000000000)
+		top: '50%', // Top position relative to parent
+		left: '50%' // Left position relative to parent
+	};
+
+	new Spinner(opts).spin($('.processing')[0]);
 
 	// Load projects
 
+	$('.processing').show();
 	$.getJSON('/projects', function(projects) {
 		projects.forEach(function(project) {
 			$('#projects').append('<option value="' + project.id + '">' + project.name + '</option>');
 		});
+		$('.processing').hide();
 	});
 
 	$('#load').click(function() {
+		$('.processing').show();
 		$.getJSON('/iterations/' + $('#projects').val(), function(iterations) {
 			loadIterations(iterations);
 			$('#iterations').empty();
 			iterations.forEach(function(iteration) {
 				$('#iterations').prepend('<option value="' + iteration.id + '">' + getReleaseLabelFromIteration(iteration) + '</option>');
 			});
+			$('.processing').hide();
 		});
 	});
 
@@ -287,45 +308,11 @@ $(document).ready(function() {
 	});
 
 	$('#loadBurndown').click(function() {
+		$('.processing').show();
 		$.getJSON('/activity/' + $('#projects').val() + '/' + $('#iterations').val(), function(iteration) {
 			loadBurndownChart(iteration);
 			loadFlowChart(iteration);
-		});
-	});
-
-	// Animations
-
-	var $chart = $('.ct-chart');
-
-	$chart.each(function() {
-		$(this).append('<div class="tooltip"></div>')
-			.find('.tooltip')
-			.hide();
-	});
-
-	$chart.on('mouseenter', '.ct-bar, .ct-point', function() {
-		var $point = $(this),
-			value = $point.attr('ct:value'),
-			seriesName = $point.parent().attr('ct:series-name');
-		$point.animate({
-			'stroke-width': '50px'
-		}, 300, easeOutQuad);
-		$point.parent().parent().prev().html(seriesName + '<br>' + value).show();
-	});
-
-	$chart.on('mouseleave', '.ct-bar, .ct-point', function() {
-		var $point = $(this);
-		$point.animate({
-			'stroke-width': '20px'
-		}, 300, easeOutQuad);
-		$point.parent().parent().prev().hide();
-	});
-
-	$chart.on('mousemove', function(event) {
-		var $toolTip = $(this).find('.tooltip');
-		$toolTip.css({
-			left: (event.offsetX || event.originalEvent.layerX) - $toolTip.width() / 2 - 10,
-			top: (event.offsetY || event.originalEvent.layerY) - $toolTip.height() - 40
+			$('.processing').hide();
 		});
 	});
 
