@@ -7,6 +7,7 @@ var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var fetch = require('./fetch');
+var moment = require('moment');
 
 var app = express();
 
@@ -70,6 +71,15 @@ app.get('/activity/:project/:iteration', function(req, res) {
 				});
 			});
 		}
+	});
+});
+
+app.get('/activity/:project/:from/:to', function(req, res) {
+	fetch.getActivityMk2(req.params.project, +moment(req.params.from), +moment(req.params.to), function(err, data) {
+		res.json({
+			err: err,
+			data: data
+		});
 	});
 });
 
