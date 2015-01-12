@@ -4,8 +4,6 @@
 
 var express = require('express');
 var path = require('path');
-var fs = require('fs');
-var mkdirp = require('mkdirp');
 var fetch = require('./fetch');
 var moment = require('moment');
 
@@ -20,62 +18,8 @@ app.get('/projects', function(req, res) {
 	});
 });
 
-app.get('/iterations/:project', function(req, res) {
-	var file = path.join(__dirname, 'data', req.params.project, 'iterations.json');
-	fs.exists(file, function(exists) {
-		res.setHeader('Content-Type', 'application/json');
-		if (exists) {
-			fs.createReadStream(file).pipe(res);
-		} else {
-			fetch.getIterationData(req.params.project, function(err, iterations) {
-				mkdirp(path.dirname(file), function() {
-					fs.writeFile(file, JSON.stringify(iterations), function() {
-						fs.createReadStream(file).pipe(res);
-					});
-				});
-			});
-		}
-	});
-});
-
-app.post('/iterations/reset/:project', function(req, res) {
-	var file = path.join(__dirname, 'data', req.params.project, 'iterations.json');
-	fs.unlink(file, function(err) {
-		res.json({
-			error: err
-		});
-	});
-});
-
-app.post('/iteration/reset/:project/:id', function(req, res) {
-	var file = path.join(__dirname, 'data', req.params.project, req.params.id + '.json');
-	fs.unlink(file, function(err) {
-		res.json({
-			error: err
-		});
-	});
-});
-
-app.get('/activity/:project/:iteration', function(req, res) {
-	var file = path.join(__dirname, 'data', req.params.project, req.params.iteration + '.json');
-	fs.exists(file, function(exists) {
-		res.setHeader('Content-Type', 'application/json');
-		if (exists) {
-			fs.createReadStream(file).pipe(res);
-		} else {
-			fetch.getActivity(req.params.project, parseInt(req.params.iteration), function(err, iteration) {
-				mkdirp(path.dirname(file), function() {
-					fs.writeFile(file, JSON.stringify(iteration), function() {
-						fs.createReadStream(file).pipe(res);
-					});
-				});
-			});
-		}
-	});
-});
-
-app.get('/activity/:project/:from/:to', function(req, res) {
-	fetch.getActivityMk2(req.params.project, +moment(req.params.from), +moment(req.params.to), function(err, data) {
+app.get('/activity/:project/:from/:to/:type', function(req, res) {
+	fetch.getActivity(req.params.project, +moment(req.params.from), +moment(req.params.to), req.params.type, function(err, data) {
 		res.json({
 			err: err,
 			data: data
@@ -84,5 +28,5 @@ app.get('/activity/:project/:from/:to', function(req, res) {
 });
 
 app.listen(app.get('port'), function() {
-	console.log('Express server listening on port ' + app.get('port'));
+	console.log('Server listening on port ' + app.get('port'));
 });
