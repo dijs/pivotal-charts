@@ -10,5 +10,6 @@
     "pivotaljs": "0.0.11",
     "express": "~4.10.4",
     "underscore": "~1.7.0"
-  }
+  },
+  "license": "MIT"
 }
