@@ -101,11 +101,16 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 	}
 
 	function buildSortedData(data) {
-		return sortedStates.map(function(state) {
-			return _.findWhere(data, {
+		var results = [];
+		sortedStates.forEach(function(state) {
+			var result = _.findWhere(data, {
 				key: state
 			});
+			if (result) {
+				results.push(result);
+			}
 		});
+		return results;
 	}
 
 	pivotal.getActivity(projectId, {
