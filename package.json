@@ -1,6 +1,6 @@
 {
   "name": "pivotal-charts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Pivotal Data Charts",
   "main": "index.js",
   "author": "Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/)",
