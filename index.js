@@ -27,6 +27,15 @@ app.get('/activity/:project/:from/:to/:type', function(req, res) {
 	});
 });
 
+app.get('/current-sprint/:project', function(req, res) {
+	fetch.getCurrentSprintRange(req.params.project, function(err, range) {
+		res.json({
+			err: err,
+			range: range
+		});
+	});
+});
+
 app.listen(app.get('port'), function() {
 	console.log('Server is running on http://localhost:' + app.get('port'));
 });

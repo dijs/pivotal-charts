@@ -53,12 +53,33 @@ $(document).ready(function() {
 		$('.processing').hide();
 	});
 
-	$('#load').click(function() {
+	function updateChart() {
 		$('.processing').show();
-		$.getJSON('/activity/' + $('#projects').val() + '/' + $('#from').val() + '/' + $('#to').val() +'/' + $('#type').val(), function(res) {
+		$.getJSON('/activity/' + $('#projects').val() + '/' + $('#from').val() + '/' + $('#to').val() + '/' + $('#type').val(), function(res) {
 			loadFlowChart(res.data);
 			$('.processing').hide();
 		});
+	}
+
+	$('#load').click(updateChart);
+
+	function updateCurrentSprint() {
+		$.getJSON('/current-sprint/' + $('#projects').val(), function(res) {
+			$('#from').val(res.range.from);
+			$('#to').val(res.range.to);
+			updateChart();
+		});
+	}
+
+	var followInterval;
+
+	$('#follow').change(function() {
+		if ($(this).is(':checked')) {
+			updateCurrentSprint();
+			followInterval = setInterval(updateCurrentSprint, 1000 * 60 * 60);
+		} else {
+			clearInterval(followInterval);
+		}
 	});
 
 });

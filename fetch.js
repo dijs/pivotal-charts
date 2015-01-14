@@ -64,6 +64,19 @@ module.exports.getProjects = function(callback) {
 	});
 };
 
+module.exports.getCurrentSprintRange = function(project, callback) {
+	pivotal.getCurrentIterations(project, function(err, iterations) {
+		if (iterations && iterations.length > 0) {
+			callback(null, {
+				from: moment(iterations[0].start).format('YYYY-MM-DD'),
+				to: moment(iterations[0].finish).format('YYYY-MM-DD')
+			});
+		} else {
+			callback(err || new Error('Current sprint doesnt exist'));
+		}
+	});
+};
+
 module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, type, callback) {
 	var allEvents = [];
 	var range = _.range(dateRangeFrom, dateRangeTo, millisInDay);
