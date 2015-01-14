@@ -1,28 +1,12 @@
 'use strict';
 
-/* global $, nv, d3, Spinner */
-
-function loadFlowChart(data) {
-	nv.addGraph(function() {
-		var chart = nv.models.stackedAreaChart()
-			.useInteractiveGuideline(true)
-			.rightAlignYAxis(false)
-			.transitionDuration(500)
-			.showControls(true)
-			.clipEdge(true);
-		chart.xAxis.tickFormat(function(d) {
-			return d3.time.format('%b %d')(new Date(d));
-		});
-		chart.yAxis.tickFormat(d3.format(',f'));
-		d3.select('.flow svg')
-			.datum(data)
-			.call(chart);
-		nv.utils.windowResize(chart.update);
-		return chart;
-	});
-}
+/* global $, nv, d3, Spinner, Handlebars */
 
 $(document).ready(function() {
+	var history;
+
+	var source = $('#story-template').html();
+	var storyTemplate = Handlebars.compile(source);
 
 	var opts = {
 		lines: 11, // The number of lines to draw
@@ -43,6 +27,56 @@ $(document).ready(function() {
 		left: '50%' // Left position relative to parent
 	};
 
+	function getStoriesFromClickEvent(e) {
+		var box = $('.nv-areaWrap').get(0).getBoundingClientRect();
+		var index = Math.floor((e.pos[0] - box.left) / box.width * history[0].states.length);
+		return history.filter(function(story) {
+			return story.states[index] === e.series;
+		}).map(function(story) {
+			return story.id;
+		});
+	}
+
+	function addChartEvents(chart) {
+		chart.stacked.dispatch.on('areaClick.toggle', null);
+		chart.stacked.dispatch.on('areaClick', function(e) {
+			$('.processing').show();
+			$.getJSON('/stories/' + $('#projects').val() + '/' + getStoriesFromClickEvent(e).join(','), function(res) {
+				$('#storiesModal .list-group').empty().append(res.stories.map(storyTemplate).join(''));
+				$('.processing').hide();
+				$('#storiesModal').modal('show');
+			});
+		});
+		if (chart.update) {
+			var originalUpdate = chart.update;
+			chart.update = function() {
+				originalUpdate();
+				addChartEvents(chart);
+			};
+		}
+	}
+
+	function loadFlowChart(data) {
+		nv.addGraph(function() {
+			var chart = nv.models.stackedAreaChart()
+				.useInteractiveGuideline(true)
+				.rightAlignYAxis(false)
+				.transitionDuration(500)
+				.showControls(true)
+				.clipEdge(true);
+			chart.xAxis.tickFormat(function(d) {
+				return d3.time.format('%b %d')(new Date(d));
+			});
+			chart.yAxis.tickFormat(d3.format(',f'));
+			d3.select('.flow svg')
+				.datum(data)
+				.call(chart);
+			nv.utils.windowResize(chart.update);
+			addChartEvents(chart);
+			return chart;
+		});
+	}
+
 	new Spinner(opts).spin($('.processing')[0]);
 
 	$('.processing').show();
@@ -50,13 +84,15 @@ $(document).ready(function() {
 		projects.forEach(function(project) {
 			$('#projects').append('<option value="' + project.id + '">' + project.name + '</option>');
 		});
-		$('.processing').hide();
+
+		updateCurrentSprint();
 	});
 
 	function updateChart() {
 		$('.processing').show();
 		$.getJSON('/activity/' + $('#projects').val() + '/' + $('#from').val() + '/' + $('#to').val() + '/' + $('#type').val(), function(res) {
 			loadFlowChart(res.data);
+			history = res.history;
 			$('.processing').hide();
 		});
 	}

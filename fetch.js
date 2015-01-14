@@ -1,10 +1,8 @@
 'use strict';
 /* global require, console, module, process */
 
-var natural = require('natural');
 var Pivotal = require('pivotaljs');
 var moment = require('moment');
-var async = require('async');
 var _ = require('underscore');
 
 var pivotal = new Pivotal(process.env.PIVOTAL_API_KEY);
@@ -64,6 +62,20 @@ module.exports.getProjects = function(callback) {
 	});
 };
 
+module.exports.getStories = function(projectId, storyIds, callback) {
+	var results = [];
+	pivotal.getStories(projectId, {
+		filter: 'id:' + storyIds
+	}, function(err, stories, page, next) {
+		results = results.concat(stories.map(function(story){
+			return _.pick(story, 'name', 'url', 'labels');
+		}));
+		next(true);
+	}, function(err) {
+		callback(err, results);
+	});
+};
+
 module.exports.getCurrentSprintRange = function(project, callback) {
 	pivotal.getCurrentIterations(project, function(err, iterations) {
 		if (iterations && iterations.length > 0) {
@@ -91,14 +103,17 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 		};
 	})();
 
-	function getStoryStates(events) {
-		return range.map(function(day) {
-			return getStateForDay(events, day);
-		});
+	function getStoryStates(events, id) {
+		return {
+			id: id,
+			states: range.map(function(day) {
+				return getStateForDay(events, day);
+			})
+		};
 	}
 
-	function addStoryData(states) {
-		states.forEach(function(state, index) {
+	function addStoryData(story) {
+		story.states.forEach(function(state, index) {
 			_.findWhereOrCreate(data, {
 				key: state
 			}, {
@@ -133,13 +148,14 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 		allEvents = allEvents.concat(events);
 		done(true);
 	}, function(err) {
-		_.chain(allEvents)
+		var history = _.chain(allEvents)
 			.filter(isStoryStateUpdateEvent)
 			.map(normalizeEvent)
 			.filter(byType)
 			.groupBy('id')
 			.map(getStoryStates)
-			.each(addStoryData);
-		callback(err, buildSortedData(data));
+			.value();
+		history.forEach(addStoryData);
+		callback(err, buildSortedData(data), history);
 	});
 };

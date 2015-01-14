@@ -19,10 +19,20 @@ app.get('/projects', function(req, res) {
 });
 
 app.get('/activity/:project/:from/:to/:type', function(req, res) {
-	fetch.getActivity(req.params.project, +moment(req.params.from), +moment(req.params.to), req.params.type, function(err, data) {
+	fetch.getActivity(req.params.project, +moment(req.params.from), +moment(req.params.to), req.params.type, function(err, data, history) {
 		res.json({
 			err: err,
-			data: data
+			data: data,
+			history: history
+		});
+	});
+});
+
+app.get('/stories/:project/:ids', function(req, res){
+	fetch.getStories(req.params.project, req.params.ids, function(err, stories){
+		res.json({
+			err: err,
+			stories: stories
 		});
 	});
 });
