@@ -22,8 +22,8 @@ var normalizeEvent = function(event) {
 	var change = event.changes[0];
 	return {
 		id: change.id,
-		before: change.original_values.current_state || event.highlight,
-		after: change.new_values.current_state || event.highlight,
+		before: change.original_values ? change.original_values.current_state : event.highlight,
+		after: change.new_values ? change.new_values.current_state : event.highlight,
 		at: +moment(event.occurred_at),
 		type: change.story_type
 	};
