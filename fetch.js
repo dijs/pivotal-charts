@@ -1,11 +1,13 @@
 'use strict';
-/* global require, console, module, process */
+/* global require, module, process */
 
 var Pivotal = require('pivotaljs');
 var moment = require('moment');
 var _ = require('underscore');
 
 var pivotal = new Pivotal(process.env.PIVOTAL_API_KEY);
+
+var numberOfNoiseReductionDays = 7;
 
 var isStoryStateUpdateEvent = function(event) {
 	return event.kind === 'story_update_activity' &&
@@ -67,7 +69,7 @@ module.exports.getStories = function(projectId, storyIds, callback) {
 	pivotal.getStories(projectId, {
 		filter: 'id:' + storyIds
 	}, function(err, stories, page, next) {
-		results = results.concat(stories.map(function(story){
+		results = results.concat(stories.map(function(story) {
 			return _.pick(story, 'name', 'url', 'labels');
 		}));
 		next(true);
@@ -91,7 +93,8 @@ module.exports.getCurrentSprintRange = function(project, callback) {
 
 module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, type, callback) {
 	var allEvents = [];
-	var range = _.range(dateRangeFrom, dateRangeTo, millisInDay);
+	var beforeDateRangeFrom = dateRangeFrom - millisInDay * numberOfNoiseReductionDays;
+	var range = _.range(beforeDateRangeFrom, dateRangeTo, millisInDay);
 	var data = [];
 	var sortedStates = ['accepted', 'delivered', 'finished', 'rejected', 'started',
 		'unstarted', 'planned', 'unscheduled', 'unestimated'
@@ -135,6 +138,7 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 				key: state
 			});
 			if (result) {
+				result.values = result.values.slice(numberOfNoiseReductionDays);
 				results.push(result);
 			}
 		});
@@ -143,7 +147,7 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 
 	pivotal.getActivity(projectId, {
 		occurred_before: dateRangeTo,
-		occurred_after: dateRangeFrom
+		occurred_after: beforeDateRangeFrom
 	}, function(err, events, page, done) {
 		allEvents = allEvents.concat(events);
 		done(true);

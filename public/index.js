@@ -3,8 +3,9 @@
 /* global $, nv, d3, Spinner, Handlebars */
 
 $(document).ready(function() {
+	
 	var history;
-
+	var chart;
 	var source = $('#story-template').html();
 	var storyTemplate = Handlebars.compile(source);
 
@@ -56,25 +57,28 @@ $(document).ready(function() {
 		}
 	}
 
-	function loadFlowChart(data) {
+	function createChart(cb) {
 		nv.addGraph(function() {
-			var chart = nv.models.stackedAreaChart()
+			chart = nv.models.stackedAreaChart()
 				.useInteractiveGuideline(true)
-				.rightAlignYAxis(false)
 				.transitionDuration(500)
 				.showControls(true)
 				.clipEdge(true);
 			chart.xAxis.tickFormat(function(d) {
 				return d3.time.format('%b %d')(new Date(d));
 			});
-			chart.yAxis.tickFormat(d3.format(',f'));
-			d3.select('.flow svg')
-				.datum(data)
-				.call(chart);
+			chart.yAxis.axisLabel('Stories').tickFormat(d3.format(',f'));
+			chart.margin({
+				left: 100
+			});
 			nv.utils.windowResize(chart.update);
 			addChartEvents(chart);
-			return chart;
+			cb();
 		});
+	}
+
+	function updateData(data) {
+		d3.select('.flow svg').datum(data).call(chart);
 	}
 
 	new Spinner(opts).spin($('.processing')[0]);
@@ -84,14 +88,19 @@ $(document).ready(function() {
 		projects.forEach(function(project) {
 			$('#projects').append('<option value="' + project.id + '">' + project.name + '</option>');
 		});
-
 		updateCurrentSprint();
 	});
 
 	function updateChart() {
 		$('.processing').show();
 		$.getJSON('/activity/' + $('#projects').val() + '/' + $('#from').val() + '/' + $('#to').val() + '/' + $('#type').val(), function(res) {
-			loadFlowChart(res.data);
+			if (!chart) {
+				createChart(function() {
+					updateData(res.data);
+				});
+			} else {
+				updateData(res.data);
+			}
 			history = res.history;
 			$('.processing').hide();
 		});
