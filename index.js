@@ -10,7 +10,9 @@ var moment = require('moment');
 var app = express();
 
 app.set('port', 30473);
+
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
 app.get('/projects', function(req, res) {
 	fetch.getProjects(function(err, projects) {
