@@ -61,7 +61,7 @@ module.exports = React.createClass({
 		this.setState({
 			loading: true
 		});
-		$.get('/activity/' + options.project + '/' + options.from + '/' + options.to + '/' + options.type, function(res) {
+		$.get('/activity/' + options.project + '/' + options.from + '/' + options.to + '/' + options.type + '/' + options.label, function(res) {
 			history = res.history;
 			d3.select('.flow svg').datum(res.data).call(chart);
 			this.setState({

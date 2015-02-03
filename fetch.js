@@ -4,6 +4,7 @@
 var Pivotal = require('pivotaljs');
 var moment = require('moment');
 var _ = require('underscore');
+var async = require('async');
 
 var pivotal = new Pivotal(process.env.PIVOTAL_API_KEY);
 
@@ -64,13 +65,28 @@ module.exports.getProjects = function(callback) {
 	});
 };
 
-module.exports.getStories = function(projectId, storyIds, callback) {
+module.exports.getLabels = function(projectId, callback) {
+	pivotal.getLabels(projectId, function(err, labels) {
+		if (err) {
+			callback(err);
+		} else {
+			callback(null, labels.map(function(label) {
+				return {
+					name: label.name,
+					id: label.id
+				};
+			}));
+		}
+	});
+};
+
+var fetchStories = module.exports.getStories = function(projectId, storyIds, label, callback) {
 	var results = [];
 	pivotal.getStories(projectId, {
-		filter: 'id:' + storyIds
+		filter: 'id:' + storyIds + (label ? ' label:"' + label + '"' : '')
 	}, function(err, stories, page, next) {
 		results = results.concat(stories.map(function(story) {
-			return _.pick(story, 'name', 'url', 'labels');
+			return _.pick(story, 'id', 'name', 'url', 'labels');
 		}));
 		next(true);
 	}, function(err) {
@@ -91,8 +107,8 @@ module.exports.getCurrentSprintRange = function(project, callback) {
 	});
 };
 
-module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, type, callback) {
-	var allEvents = [];
+module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, type, label, callback) {
+
 	var beforeDateRangeFrom = dateRangeFrom - millisInDay * numberOfNoiseReductionDays;
 	var range = _.range(beforeDateRangeFrom, dateRangeTo, millisInDay);
 	var data = [];
@@ -145,21 +161,63 @@ module.exports.getActivity = function(projectId, dateRangeFrom, dateRangeTo, typ
 		return results;
 	}
 
-	pivotal.getActivity(projectId, {
-		occurred_before: dateRangeTo,
-		occurred_after: beforeDateRangeFrom
-	}, function(err, events, page, done) {
-		allEvents = allEvents.concat(events);
-		done(true);
-	}, function(err) {
-		var history = _.chain(allEvents)
+	function getActivity(cb) {
+		var results = [];
+		pivotal.getActivity(projectId, {
+			occurred_before: dateRangeTo,
+			occurred_after: beforeDateRangeFrom
+		}, function(err, events, page, done) {
+			results = results.concat(events);
+			done(true);
+		}, function(err) {
+			cb(err, results);
+		});
+	}
+
+	function processActivity(events, cb) {
+		var eventsByStory = _.chain(events)
 			.filter(isStoryStateUpdateEvent)
 			.map(normalizeEvent)
 			.filter(byType)
 			.groupBy('id')
+			.value();
+		cb(null, eventsByStory);
+	}
+
+	function getStories(eventsByStory, cb) {
+		if (label === 'any') {
+			cb(null, eventsByStory, []);
+		} else {
+			fetchStories(projectId, _.keys(eventsByStory).join(','), label, function(err, stories) {
+				cb(err, eventsByStory, stories);
+			});
+		}
+	}
+
+	function filterByLabel(eventsByStory, stories, cb) {
+		var filtered = label === 'any' ? eventsByStory : _.pick(eventsByStory, function(events, storyId) {
+			return _.any(stories, function(story) {
+				return (story.id + '') === storyId;
+			});
+		});
+		cb(null, filtered);
+	}
+
+	function processEvents(eventsByStory, callback) {
+		var history = _
+			.chain(eventsByStory)
 			.map(getStoryStates)
 			.value();
 		history.forEach(addStoryData);
-		callback(err, buildSortedData(data), history);
-	});
+		callback(null, buildSortedData(data), history);
+	}
+
+	async.waterfall([
+		getActivity,
+		processActivity,
+		getStories,
+		filterByLabel,
+		processEvents
+	], callback);
+
 };

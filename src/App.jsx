@@ -5,6 +5,7 @@ var React = require('react');
 var ProjectFilter = require('./ProjectFilter.jsx');
 var Chart = require('./Chart.jsx');
 var StoryTypeFilter = require('./StoryTypeFilter.jsx');
+var LabelFilter = require('./LabelFilter.jsx');
 var DateSelector = require('./DateSelector.jsx');
 var StoriesModal = require('./StoriesModal.jsx');
 
@@ -21,7 +22,8 @@ var App = React.createClass({
 			from: null,
 			following: false,
 			followInterval: null,
-			loading: false
+			loading: false,
+			label: 'any'
 		};
 	},
 	updateChart: function() {
@@ -49,8 +51,9 @@ var App = React.createClass({
 		}
 	},
 	projectFilterReady: function() {
+		this.refs.labels.load(this.state.project);
 		this.updateDataRangeForCurrentSprint(function() {
-			this.updateChart();
+			this.updateChart(); 
 		}.bind(this));
 	},
 	updateDataRangeForCurrentSprint: function(callback) {
@@ -95,12 +98,11 @@ var App = React.createClass({
 			            			<StoryTypeFilter update={this.updateState} />
 			            		</Col>
 			            		<Col md={4}>
+			            			<LabelFilter ref='labels' update={this.updateState} />
 				              </Col>
 			            		<Col md={4}>
 				              	<div className='form-group'>
-				                    		<Button bsStyle='primary' className='form-control' onClick={this.updateChart}>
-				                    			Load
-				                    		</Button>
+				                    		<Button bsStyle='primary' className='form-control' onClick={this.updateChart}>Load</Button>
 				                	</div>
 				            	</Col>
 			        	</Row>
