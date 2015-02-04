@@ -1,6 +1,6 @@
 {
   "name": "pivotal-charts",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "Pivotal Data Charts",
   "main": "index.js",
   "author": "Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/)",
@@ -9,7 +9,14 @@
     "moment": "~2.8.4",
     "pivotaljs": "0.0.11",
     "express": "~4.10.4",
-    "underscore": "~1.7.0"
+    "underscore": "~1.7.0",
+    "react": "~0.12.2",
+    "jquery": "~2.1.3",
+    "react-bootstrap": "~0.13.3",
+    "vinyl-source-stream": "~1.0.0",
+    "gulp": "~3.8.10",
+    "browserify": "~8.1.1",
+    "reactify": "~1.0.0"
   },
   "license": "MIT"
 }

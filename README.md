@@ -9,6 +9,7 @@ $ git clone https://github.com/dijs/pivotal-charts.git
 $ cd pivotal-charts
 $ npm install
 $ export PIVOTAL_API_KEY=<key>
+$ gulp compile
 $ node index.js
 ```
 

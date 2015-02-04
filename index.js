@@ -10,7 +10,9 @@ var moment = require('moment');
 var app = express();
 
 app.set('port', 30473);
+
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/dist', express.static(path.join(__dirname, 'dist')));
 
 app.get('/projects', function(req, res) {
 	fetch.getProjects(function(err, projects) {
@@ -18,18 +20,33 @@ app.get('/projects', function(req, res) {
 	});
 });
 
-app.get('/activity/:project/:from/:to/:type', function(req, res) {
-	fetch.getActivity(req.params.project, +moment(req.params.from), +moment(req.params.to), req.params.type, function(err, data, history) {
+app.get('/labels/:project', function(req, res) {
+	fetch.getLabels(req.params.project, function(err, labels) {
 		res.json({
-			err: err,
-			data: data,
-			history: history
+			labels: labels
 		});
 	});
 });
 
+app.get('/activity/:project/:from/:to/:type/:label', function(req, res) {
+	fetch.getActivity(
+		req.params.project, 
+		+moment(req.params.from), 
+		+moment(req.params.to), 
+		req.params.type, 
+		req.params.label,
+		function(err, data, history) {
+			res.json({
+				err: err,
+				data: data,
+				history: history
+			});
+		}
+	);
+});
+
 app.get('/stories/:project/:ids', function(req, res){
-	fetch.getStories(req.params.project, req.params.ids, function(err, stories){
+	fetch.getStories(req.params.project, req.params.ids, 'any', function(err, stories){
 		res.json({
 			err: err,
 			stories: stories
