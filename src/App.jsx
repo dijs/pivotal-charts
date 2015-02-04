@@ -1,5 +1,3 @@
-// Figure out how to not filter types upon click...
- 
 var React = require('react');
 
 var ProjectFilter = require('./ProjectFilter.jsx');

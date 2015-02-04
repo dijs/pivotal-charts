@@ -80,10 +80,10 @@ module.exports.getLabels = function(projectId, callback) {
 	});
 };
 
-var fetchStories = module.exports.getStories = function(projectId, storyIds, label, callback) {
+var fetchStories = function(projectId, storyIds, label, callback) {
 	var results = [];
 	pivotal.getStories(projectId, {
-		filter: 'id:' + storyIds + (label ? ' label:"' + label + '"' : '')
+		filter: 'id:' + storyIds + (label === 'any' ? '' : ' label:"' + label + '"')
 	}, function(err, stories, page, next) {
 		results = results.concat(stories.map(function(story) {
 			return _.pick(story, 'id', 'name', 'url', 'labels');
@@ -93,6 +93,8 @@ var fetchStories = module.exports.getStories = function(projectId, storyIds, lab
 		callback(err, results);
 	});
 };
+
+module.exports.getStories = fetchStories;
 
 module.exports.getCurrentSprintRange = function(project, callback) {
 	pivotal.getCurrentIterations(project, function(err, iterations) {

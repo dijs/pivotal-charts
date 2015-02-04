@@ -29,6 +29,9 @@ module.exports = React.createClass({
 		}).join(',');
 	},
 	addChartEvents: function() {
+		chart.legend.dispatch.on('legendClick', null);
+		chart.legend.dispatch.on('legendDblclick', null);
+		chart.legend.dispatch.on('stateChange', null);
 		chart.stacked.dispatch.on('areaClick.toggle', null);
 		chart.stacked.dispatch.on('areaClick', function(event) {
 			this.props.handleAreaClick(this.getStoriesFromClickEvent(event));
@@ -55,7 +58,6 @@ module.exports = React.createClass({
 			left: 100
 		});
 		nv.utils.windowResize(chart.update);
-		this.addChartEvents();
 	},
 	updateChartData: function(options) {
 		this.setState({
@@ -64,17 +66,18 @@ module.exports = React.createClass({
 		$.get('/activity/' + options.project + '/' + options.from + '/' + options.to + '/' + options.type + '/' + options.label, function(res) {
 			history = res.history;
 			d3.select('.flow svg').datum(res.data).call(chart);
+			this.addChartEvents();
 			this.setState({
 				loading: false
-			});		
+			});
 		}.bind(this));
 	},
 	render: function() {
 		return (
-			<div className='flow with-transition'>
-	            		{ this.state.loading ? <h6>Loading Chart...</h6> : <span /> }
-	            		<svg></svg>
-		      	</div>
+			<div className = 'flow with-transition'>
+				{ this.state.loading ? <h6>Loading Chart...</h6> : <span/> }
+				<svg></svg>
+			</div>
 		);
 	}
 });

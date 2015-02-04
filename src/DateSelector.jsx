@@ -8,7 +8,10 @@ module.exports = React.createClass({
 	},
 	update: function(event) {
 		var data = {};
-		data[this.props.name] = event.target.value;
+		this.setState({
+			value: event.target.value
+		});
+		data[this.props.name] = this.state.value;
 		this.props.update(data);
 	},
 	render: function() {
