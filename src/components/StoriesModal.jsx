@@ -1,8 +1,14 @@
+'use strict';
+
+/* jshint node:true */
+
 var React = require('react');
 
 var Modal = require('react-bootstrap/Modal');
 var Button = require('react-bootstrap/Button');
 var OverlayMixin = require('react-bootstrap/OverlayMixin');
+
+var ProjectStore = require('../stores/ProjectStore');
 
 module.exports = React.createClass({
 	mixins: [OverlayMixin],
@@ -21,12 +27,12 @@ module.exports = React.createClass({
 		});
 	},
 
-	load: function(project, stories) {
+	load: function(stories) {
 		this.setState({
 			loading: true
 		});
 		this.handleToggle();
-		$.get('/stories/' + project + '/' + stories, function(res) {
+		$.get('/stories/' + ProjectStore.getSelectedProjectId() + '/' + stories, function(res) {
 			this.setState({
 				loading: false,
 				stories: res.stories
@@ -47,7 +53,7 @@ module.exports = React.createClass({
 
 		var stories = this.state.stories.map(function(story){
 			return (
-				<a href={story.url} className='list-group-item story'>
+				<a href={story.url} target='_blank' className='list-group-item story'>
 			           <h6 className='list-group-item-heading'>{story.name}</h6>
 			            <p className='list-group-item-text'>
 			                {

@@ -1,4 +1,13 @@
+'use strict';
+
+/* jshint node:true */
+
 var React = require('react');
+
+var ProjectStore = require('../stores/ProjectStore');
+var DateRangeStore = require('../stores/DateRangeStore');
+var LabelStore = require('../stores/LabelStore');
+var StoryTypeStore = require('../stores/StoryTypeStore');
 
 var chart;
 var history;
@@ -9,13 +18,13 @@ module.exports = React.createClass({
 			loading: false
 		};
 	},
-	update: function(options) {
+	update: function() {
 		if (chart) {
-			this.updateChartData(options);
+			this.updateChartData();
 		} else {
 			nv.addGraph(function() {
 				this.createChart();
-				this.updateChartData(options);
+				this.updateChartData();
 			}.bind(this));
 		}
 	},
@@ -59,18 +68,20 @@ module.exports = React.createClass({
 		});
 		nv.utils.windowResize(chart.update);
 	},
-	updateChartData: function(options) {
+	updateChartData: function() {
 		this.setState({
 			loading: true
 		});
-		$.get('/activity/' + options.project + '/' + options.from + '/' + options.to + '/' + options.type + '/' + options.label, function(res) {
-			history = res.history;
-			d3.select('.flow svg').datum(res.data).call(chart);
-			this.addChartEvents();
-			this.setState({
-				loading: false
-			});
-		}.bind(this));
+		$.get('/activity/' + ProjectStore.getSelectedProjectId() + '/' + DateRangeStore.getFrom() + '/' +
+			DateRangeStore.getTo() + '/' + StoryTypeStore.getSelectedType() + '/' + LabelStore.getSelectedLabel(),
+			function(res) {
+				history = res.history;
+				d3.select('.flow svg').datum(res.data).call(chart);
+				this.addChartEvents();
+				this.setState({
+					loading: false
+				});
+			}.bind(this));
 	},
 	render: function() {
 		return (
