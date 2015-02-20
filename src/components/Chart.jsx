@@ -38,9 +38,9 @@ module.exports = React.createClass({
 		}).join(',');
 	},
 	addChartEvents: function() {
-		chart.legend.dispatch.on('legendClick', null);
-		chart.legend.dispatch.on('legendDblclick', null);
-		chart.legend.dispatch.on('stateChange', null);
+		//chart.legend.dispatch.on('legendClick', null);
+		//chart.legend.dispatch.on('legendDblclick', null);
+		//chart.legend.dispatch.on('stateChange', null);
 		chart.stacked.dispatch.on('areaClick.toggle', null);
 		chart.stacked.dispatch.on('areaClick', function(event) {
 			this.props.handleAreaClick(this.getStoriesFromClickEvent(event));

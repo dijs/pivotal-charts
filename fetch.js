@@ -5,7 +5,7 @@ var Pivotal = require('pivotaljs');
 var moment = require('moment');
 var _ = require('underscore');
 var async = require('async');
-
+ 
 var pivotal = new Pivotal(process.env.PIVOTAL_API_KEY);
 
 var numberOfNoiseReductionDays = 7;

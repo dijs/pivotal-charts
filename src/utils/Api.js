@@ -1,7 +1,8 @@
 'use strict';
 
 /* jshint node:true */
-/* global $ */
+
+var $ = require('jquery');
 
 var ProjectActions = require('../actions/ProjectActions');
 var DateRangeActions = require('../actions/DateRangeActions');

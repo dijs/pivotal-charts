@@ -19,5 +19,19 @@
     "reactify": "~1.0.0",
     "flux": "~2.0.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest-cli": "~0.2.2",
+    "react-tools": "*",
+    "nock": "~0.59.1"
+  },
+  "jest": {
+    "scriptPreprocessor": "<rootDir>/preprocessor.js",
+    "unmockedModulePathPatterns": [
+      "<rootDir>/node_modules/react"
+    ]
+  },
+  "scripts": {
+    "test": "jest"
+  }
 }
