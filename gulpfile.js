@@ -1,9 +1,13 @@
+'use strict';
+
+/* jshint node:true */
+
 var gulp = require('gulp');
 var source = require('vinyl-source-stream');
 var browserify = require('browserify');
 
 gulp.task('compile', function() {
-	var bundle = browserify({
+	browserify({
 			entries: './src/App.jsx',
 			debug: true
 		})
@@ -14,7 +18,8 @@ gulp.task('compile', function() {
 });
 
 gulp.task('watcher', function() {
-	gulp.watch('./src/*.jsx', ['compile']);
+	gulp.watch('./src/**/*.jsx', ['compile']);
+	gulp.watch('./src/**/*.js', ['compile']);
 });
 
 gulp.task('default', ['compile', 'watcher']);
